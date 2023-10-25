@@ -1,6 +1,20 @@
 const express = require('express');
 const { Todo } = require('../mongo')
+const redis = require("../redis");
 const router = express.Router();
+
+const initializeCounter = async () => {
+  let currentCounter = await redis.getAsync('counter');
+
+  if (isNaN(currentCounter) || currentCounter === null) {
+    currentCounter = 0;
+    await redis.setAsync('counter', currentCounter);
+  }
+};
+
+initializeCounter().catch(error => {
+  console.error('Error initializing counter in Redis:', error);
+});
 
 /* GET todos listing. */
 router.get('/', async (_, res) => {
@@ -14,7 +28,25 @@ router.post('/', async (req, res) => {
     text: req.body.text,
     done: false
   })
+
+  const currentCounter = await redis.getAsync('counter');
+  const newCounter = parseInt(currentCounter) + 1;
+
+  await redis.setAsync('counter', newCounter);
   res.send(todo);
+});
+
+/* GET statistics */
+router.get('/statistics', async (_, res) => {
+  // Retrieve the counter value from Redis
+  const counter = await redis.getAsync('counter');
+
+  // Prepare the JSON response with the counter value
+  const statistics = {
+    added_todos: counter,
+  };
+
+  res.json(statistics);
 });
 
 const singleRouter = express.Router();
