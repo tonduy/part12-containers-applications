@@ -27,9 +27,15 @@ router.post('/', async (req, res) => {
   const todo = await Todo.create({
     text: req.body.text,
     done: false
-  })
+  });
 
-  const currentCounter = await redis.getAsync('counter');
+  let currentCounter = await redis.getAsync('counter');
+
+  if (currentCounter === null || isNaN(currentCounter)) {
+    const totalTodos = await Todo.countDocuments({});
+    currentCounter = totalTodos;
+  }
+
   const newCounter = parseInt(currentCounter) + 1;
 
   await redis.setAsync('counter', newCounter);
