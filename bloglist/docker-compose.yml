@@ -1,0 +1,29 @@
+services:
+    app:
+      image: bloglist-frontend
+      build:
+        context: ./frontend
+      volumes:
+        - ./frontend:/usr/src/app
+      container_name: frontend-bloglist-prod
+
+    server:
+      image: bloglist-backend
+      build:
+        context: ./backend
+      volumes:
+        - ./backend:/usr/src/app
+      env_file:
+        - ./backend/.env
+      container_name: backend-bloglist-prod
+
+    nginx:
+      image: nginx
+      volumes:
+        - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      ports:
+        - 8080:80
+      container_name: reverse-proxy-blocklist-prod
+      depends_on:
+        - app
+        - server
